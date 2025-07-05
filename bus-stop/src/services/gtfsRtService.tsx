@@ -56,11 +56,18 @@ const PROTO_PATH = '/gtfs-realtime.proto';
 
 export async function fetchBusPositions(): Promise<BusPosition[]> {
   try {
+    console.log('Fetching from:', VEHICLE_POSITIONS_API);
     const response = await fetch(VEHICLE_POSITIONS_API);
+    console.log('Response status:', response.status, 'ok:', response.ok);
+    
     if (!response.ok) {
-      throw new Error('Failed to fetch vehicle positions');
+      const errorText = await response.text();
+      console.error('Response error:', errorText);
+      throw new Error(`Failed to fetch vehicle positions: ${response.status} ${response.statusText}`);
     }
+    
     const buffer = await response.arrayBuffer();
+    console.log('Received buffer size:', buffer.byteLength);
 
     const root = await protobuf.load(PROTO_PATH);
     const FeedMessage = root.lookupType('transit_realtime.FeedMessage');
@@ -83,6 +90,7 @@ export async function fetchBusPositions(): Promise<BusPosition[]> {
       });
     }
 
+    console.log('Parsed buses:', buses.length);
     return buses;
   } catch (error) {
     console.error('Error fetching GTFS-RT bus positions:', error);
@@ -92,13 +100,21 @@ export async function fetchBusPositions(): Promise<BusPosition[]> {
 
 export async function fetchSwiftlyBusPositions(agencyKey: string = 'lametro'): Promise<BusPosition[]> {
   try {
-    const response = await fetch(`${SWIFTLY_VEHICLES_API}?agencyKey=${agencyKey}`);
+    const url = `${SWIFTLY_VEHICLES_API}?agencyKey=${agencyKey}`;
+    console.log('Fetching from Swiftly:', url);
+    
+    const response = await fetch(url);
+    console.log('Swiftly response status:', response.status, 'ok:', response.ok);
+    
     if (!response.ok) {
-      throw new Error('Failed to fetch Swiftly vehicle positions');
+      const errorText = await response.text();
+      console.error('Swiftly response error:', errorText);
+      throw new Error(`Failed to fetch Swiftly vehicle positions: ${response.status} ${response.statusText}`);
     }
     
     // Swiftly returns GTFS-RT binary data, so we need to decode it
     const buffer = await response.arrayBuffer();
+    console.log('Swiftly buffer size:', buffer.byteLength);
     
     const root = await protobuf.load(PROTO_PATH);
     const FeedMessage = root.lookupType('transit_realtime.FeedMessage');
@@ -121,6 +137,7 @@ export async function fetchSwiftlyBusPositions(agencyKey: string = 'lametro'): P
       });
     }
 
+    console.log('Swiftly parsed buses:', buses.length);
     return buses;
   } catch (error) {
     console.error('Error fetching Swiftly bus positions:', error);
