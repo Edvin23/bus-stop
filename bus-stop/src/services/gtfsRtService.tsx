@@ -5,6 +5,37 @@ export interface BusPosition {
   lat: number;
   lng: number;
   timestamp: number;
+  routeId?: string;
+  routeShortName?: string;
+  headsign?: string;
+  speed?: number;
+  heading?: number;
+  vehicleType?: string;
+}
+
+export interface SwiftlyVehicle {
+  id: string;
+  routeId?: string;
+  routeShortName?: string;
+  headsign?: string;
+  vehicleType?: string;
+  directionId?: string;
+  loc: {
+    lat: number;
+    lon: number;
+    time: number;
+    speed?: number;
+    heading?: number;
+  };
+}
+
+export interface SwiftlyResponse {
+  success: boolean;
+  route: string;
+  data: {
+    agencyKey: string;
+    vehicles: SwiftlyVehicle[];
+  };
 }
 
 interface FeedEntity {
@@ -16,39 +47,100 @@ interface FeedEntity {
   };
 }
 
-// URL points to your backend proxy route
-const VEHICLE_POSITIONS_API = 'http://localhost:5000/api/vehicle-positions';
+// API endpoints
+const VEHICLE_POSITIONS_API = 'http://localhost:5555/api/vehicle-positions';
+const SWIFTLY_VEHICLES_API = 'http://localhost:5555/api/swiftly/vehicles';
 
 // Make sure you have the GTFS-Realtime proto file in your public folder or somewhere accessible
 const PROTO_PATH = '/gtfs-realtime.proto';
 
 export async function fetchBusPositions(): Promise<BusPosition[]> {
-  const response = await fetch(VEHICLE_POSITIONS_API);
-  if (!response.ok) {
-    throw new Error('Failed to fetch vehicle positions');
+  try {
+    const response = await fetch(VEHICLE_POSITIONS_API);
+    if (!response.ok) {
+      throw new Error('Failed to fetch vehicle positions');
+    }
+    const buffer = await response.arrayBuffer();
+
+    const root = await protobuf.load(PROTO_PATH);
+    const FeedMessage = root.lookupType('transit_realtime.FeedMessage');
+    const message = FeedMessage.decode(new Uint8Array(buffer));
+    const object = FeedMessage.toObject(message, { enums: String, longs: String, defaults: true });
+
+    const buses: BusPosition[] = [];
+
+    if (object.entity && Array.isArray(object.entity)) {
+      object.entity.forEach((entity: FeedEntity) => {
+        const vehicle = entity.vehicle;
+        if (vehicle && vehicle.position) {
+          buses.push({
+            id: vehicle.vehicle?.id || entity.id || 'unknown',
+            lat: vehicle.position.latitude,
+            lng: vehicle.position.longitude,
+            timestamp: Number(vehicle.timestamp) || Date.now(),
+          });
+        }
+      });
+    }
+
+    return buses;
+  } catch (error) {
+    console.error('Error fetching GTFS-RT bus positions:', error);
+    throw error;
   }
-  const buffer = await response.arrayBuffer();
+}
 
-  const root = await protobuf.load(PROTO_PATH);
-  const FeedMessage = root.lookupType('transit_realtime.FeedMessage');
-  const message = FeedMessage.decode(new Uint8Array(buffer));
-  const object = FeedMessage.toObject(message, { enums: String, longs: String, defaults: true });
+export async function fetchSwiftlyBusPositions(agencyKey: string = 'lametro'): Promise<BusPosition[]> {
+  try {
+    const response = await fetch(`${SWIFTLY_VEHICLES_API}?agencyKey=${agencyKey}`);
+    if (!response.ok) {
+      throw new Error('Failed to fetch Swiftly vehicle positions');
+    }
+    
+    // Swiftly returns GTFS-RT binary data, so we need to decode it
+    const buffer = await response.arrayBuffer();
+    
+    const root = await protobuf.load(PROTO_PATH);
+    const FeedMessage = root.lookupType('transit_realtime.FeedMessage');
+    const message = FeedMessage.decode(new Uint8Array(buffer));
+    const object = FeedMessage.toObject(message, { enums: String, longs: String, defaults: true });
 
-  const buses: BusPosition[] = [];
+    const buses: BusPosition[] = [];
 
-  if (object.entity && Array.isArray(object.entity)) {
-    object.entity.forEach((entity: FeedEntity) => {
-      const vehicle = entity.vehicle;
-      if (vehicle && vehicle.position) {
-        buses.push({
-          id: vehicle.vehicle?.id || entity.id || 'unknown',
-          lat: vehicle.position.latitude,
-          lng: vehicle.position.longitude,
-          timestamp: Number(vehicle.timestamp) || Date.now(),
-        });
-      }
-    });
+    if (object.entity && Array.isArray(object.entity)) {
+      object.entity.forEach((entity: FeedEntity) => {
+        const vehicle = entity.vehicle;
+        if (vehicle && vehicle.position) {
+          buses.push({
+            id: vehicle.vehicle?.id || entity.id || 'unknown',
+            lat: vehicle.position.latitude,
+            lng: vehicle.position.longitude,
+            timestamp: Number(vehicle.timestamp) || Date.now(),
+          });
+        }
+      });
+    }
+
+    return buses;
+  } catch (error) {
+    console.error('Error fetching Swiftly bus positions:', error);
+    throw error;
   }
+}
 
-  return buses;
+// Combined function that tries Swiftly first, falls back to GTFS-RT
+export async function fetchBusPositionsWithFallback(agencyKey: string = 'lametro'): Promise<BusPosition[]> {
+  try {
+    // Try Swiftly API first
+    return await fetchSwiftlyBusPositions(agencyKey);
+  } catch (swiftlyError) {
+    console.warn('Swiftly API failed, falling back to GTFS-RT:', swiftlyError);
+    try {
+      // Fall back to GTFS-RT
+      return await fetchBusPositions();
+    } catch (gtfsError) {
+      console.error('Both APIs failed:', gtfsError);
+      throw new Error('Unable to fetch bus positions from any source');
+    }
+  }
 }
