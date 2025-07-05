@@ -106,8 +106,8 @@ export interface PredictionsNearLocationResponse {
   };
 }
 
-const PREDICTIONS_API = 'http://localhost:5555/api/swiftly/predictions';
-const PREDICTIONS_NEAR_LOCATION_API = 'http://localhost:5555/api/swiftly/predictions-near-location';
+const PREDICTIONS_API = '/api/swiftly/predictions';
+const PREDICTIONS_NEAR_LOCATION_API = '/api/swiftly/predictions-near-location';
 
 export async function fetchPredictions(
   agencyKey: string = 'lametro',

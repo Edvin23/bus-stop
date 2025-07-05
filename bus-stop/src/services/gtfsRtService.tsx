@@ -47,9 +47,9 @@ interface FeedEntity {
   };
 }
 
-// API endpoints
-const VEHICLE_POSITIONS_API = 'http://localhost:5555/api/vehicle-positions';
-const SWIFTLY_VEHICLES_API = 'http://localhost:5555/api/swiftly/vehicles';
+// API endpoints - use relative URLs for production
+const VEHICLE_POSITIONS_API = '/api/vehicle-positions';
+const SWIFTLY_VEHICLES_API = '/api/swiftly/vehicles';
 
 // Make sure you have the GTFS-Realtime proto file in your public folder or somewhere accessible
 const PROTO_PATH = '/gtfs-realtime.proto';
