@@ -21,7 +21,9 @@ app.use(cors({
     'http://localhost:5173',
     'http://localhost:5174',
     'http://localhost:5175',
-    'https://bus-stop-three.vercel.app'
+    'https://bus-stop-three.vercel.app/',
+    'https://bus-stop-git-main-edvins-projects-dbe21ae3.vercel.app/',
+    'https://bus-stop-11r0zq8c1-edvins-projects-dbe21ae3.vercel.app/'
   ],
 }));
 
