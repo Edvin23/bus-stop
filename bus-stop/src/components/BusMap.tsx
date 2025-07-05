@@ -2,7 +2,7 @@ import { GoogleMap, LoadScript, Marker, InfoWindow } from '@react-google-maps/ap
 import { useState } from 'react';
 import { type BusPosition } from '../services/gtfsRtService';
 
-const containerStyle = { width: '100vw', height: '100vh' };
+const containerStyle = { width: '100%', height: '100%' };
 const center = { lat: 34.0522, lng: -118.2437 }; // Los Angeles
 
 interface BusMapProps {

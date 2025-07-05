@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import BusMap from "./components/BusMap";
 import { type BusPosition, fetchBusPositionsWithFallback } from './services/gtfsRtService';
+import './App.css';
 
 function App() {
   const [busPositions, setBusPositions] = useState<BusPosition[]>([]);
@@ -33,48 +34,48 @@ function App() {
   }, []);
 
   return (
-    <div style={{ width: '100vw', height: '100vh', position: 'relative' }}>
-      <BusMap busPositions={busPositions} />
-      
-      {/* Status overlay */}
-      <div style={{ 
-        position: 'absolute', 
-        top: 10, 
-        left: 10, 
-        background: 'rgba(0, 0, 0, 0.8)', 
-        color: 'white', 
-        padding: '10px', 
-        borderRadius: '5px',
-        fontSize: '14px',
-        zIndex: 1000
-      }}>
-        <div style={{ marginBottom: '5px' }}>
-          <strong>LA Real-time Bus Tracker</strong>
-        </div>
-        <div>Buses: {busPositions.length}</div>
-        {lastUpdate && (
-          <div>Last update: {lastUpdate.toLocaleTimeString()}</div>
-        )}
-        {loading && <div>🔄 Loading...</div>}
-      </div>
+    <div className="app-container">
+      {/* Header */}
+      <header className="app-header">
+        <h1 className="app-title">🚌 LA Metro Real-time Bus Tracker</h1>
+        <p className="app-subtitle">Live tracking of LA Metro buses across Los Angeles</p>
+      </header>
 
-      {/* Error display */}
-      {error && (
-        <div style={{ 
-          position: 'absolute', 
-          top: 10, 
-          right: 10, 
-          background: 'rgba(255, 0, 0, 0.9)', 
-          color: 'white', 
-          padding: '10px', 
-          borderRadius: '5px',
-          maxWidth: '300px',
-          fontSize: '14px',
-          zIndex: 1000
-        }}>
-          <strong>Error:</strong> {error}
+      {/* Map Container */}
+      <div className="map-container">
+        <BusMap busPositions={busPositions} />
+        
+        {/* Status overlay */}
+        <div className="status-overlay">
+          <div className="status-title">📊 Live Status</div>
+          <div className="status-item">
+            <span className="status-label">Active Buses:</span>
+            <span className="status-value">{busPositions.length}</span>
+          </div>
+          {lastUpdate && (
+            <div className="status-item">
+              <span className="status-label">Last Update:</span>
+              <span className="status-value">{lastUpdate.toLocaleTimeString()}</span>
+            </div>
+          )}
+          {loading && (
+            <div className="status-item">
+              <span className="status-label">Status:</span>
+              <span className="status-value">
+                <span className="loading">🔄</span> Loading...
+              </span>
+            </div>
+          )}
         </div>
-      )}
+
+        {/* Error display */}
+        {error && (
+          <div className="error-display">
+            <div className="error-title">⚠️ Error</div>
+            <div>{error}</div>
+          </div>
+        )}
+      </div>
     </div>
   );
 }
