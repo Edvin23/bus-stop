@@ -13,7 +13,7 @@ const __dirname = path.dirname(__filename);
 dotenv.config({ path: path.join(__dirname, '../.env') });
 
 const app = express();
-const PORT = 5555;
+const PORT = process.env.PORT || 5555;
 
 // ✅ CORS: allow Vite frontend (http://localhost:5173, :5174, :5175)
 app.use(cors({
@@ -26,6 +26,19 @@ app.use(cors({
 
 // ✅ Middleware to parse JSON
 app.use(express.json());
+
+// Test endpoint to verify server is working
+app.get('/api/test', (req, res) => {
+  res.json({ 
+    message: 'Server is working!',
+    timestamp: new Date().toISOString(),
+    env: {
+      hasSwiftlyKey: !!process.env.SWIFTLY_API_KEY,
+      hasGtfsUrl: !!process.env.GTFS_RT_URL,
+      port: PORT
+    }
+  });
+});
 
 // GTFS-RT endpoint and API key from .env
 const GTFS_RT_URL = process.env.GTFS_RT_URL;
@@ -43,20 +56,28 @@ app.get('/api/swiftly/vehicles', async (req, res) => {
   try {
     const { agencyKey = 'lametro' } = req.query;
     
+    console.log('Swiftly vehicles request:', { agencyKey, hasApiKey: !!SWIFTLY_API_KEY });
+    
     if (!SWIFTLY_API_KEY) {
+      console.error('Swiftly API key missing');
       return res.status(500).json({ 
         error: 'Swiftly API key not configured. Please set SWIFTLY_API_KEY in your .env file.' 
       });
     }
 
+    const url = `${SWIFTLY_BASE_URL}/real-time/${agencyKey}/gtfs-rt-vehicle-positions`;
+    console.log('Making request to:', url);
+
     // Use GTFS-RT vehicle positions endpoint since we have access to that
-    const response = await axios.get(`${SWIFTLY_BASE_URL}/real-time/${agencyKey}/gtfs-rt-vehicle-positions`, {
+    const response = await axios.get(url, {
       responseType: 'arraybuffer',
       headers: {
         'Authorization': SWIFTLY_API_KEY,
         'Accept': 'application/x-protobuf'
       }
     });
+
+    console.log('Swiftly response status:', response.status, 'data size:', response.data.length);
 
     // Return the binary data directly
     res.set('Content-Type', 'application/x-protobuf');
@@ -65,11 +86,13 @@ app.get('/api/swiftly/vehicles', async (req, res) => {
     console.error('Swiftly API fetch error:', err.message);
     if (err.response) {
       console.error('Response status:', err.response.status);
+      console.error('Response headers:', err.response.headers);
       console.error('Response data:', err.response.data);
     }
     res.status(500).json({ 
       error: 'Failed to fetch Swiftly real-time bus data',
-      details: err.message 
+      details: err.message,
+      url: `${SWIFTLY_BASE_URL}/real-time/${req.query.agencyKey || 'lametro'}/gtfs-rt-vehicle-positions`
     });
   }
 });
