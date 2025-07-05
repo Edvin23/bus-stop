@@ -1,0 +1,20 @@
+{
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@react-google-maps/api": "^2.20.6",
+    "@types/protobufjs": "^6.0.0",
+    "@types/react": "^19.1.8",
+    "axios": "^1.10.0",
+    "protobufjs": "^7.5.3"
+  },
+  "devDependencies": {
+    "@types/node": "^20.11.30",
+    "@vitejs/plugin-react": "^4.2.1",
+    "typescript": "^5.4.2",
+    "vite": "^5.2.6"
+  }
+}
