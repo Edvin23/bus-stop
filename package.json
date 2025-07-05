@@ -1,8 +1,10 @@
 {
+  "name": "bus-stop-app",
+  "version": "1.0.0",
   "scripts": {
-    "dev": "vite",
-    "build": "vite build",
-    "preview": "vite preview"
+    "dev": "cd bus-stop && npm run dev",
+    "build": "cd bus-stop && npm run build",
+    "preview": "cd bus-stop && npm run preview"
   },
   "dependencies": {
     "@react-google-maps/api": "^2.20.6",

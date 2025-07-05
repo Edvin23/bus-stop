@@ -1,0 +1,26 @@
+{
+  "version": 2,
+  "builds": [
+    {
+      "src": "bus-stop/package.json",
+      "use": "@vercel/static-build",
+      "config": {
+        "distDir": "bus-stop/dist"
+      }
+    },
+    {
+      "src": "bus-stop/server/server.js",
+      "use": "@vercel/node"
+    }
+  ],
+  "routes": [
+    {
+      "src": "/api/(.*)",
+      "dest": "/bus-stop/server/server.js"
+    },
+    {
+      "src": "/(.*)",
+      "dest": "/bus-stop/dist/$1"
+    }
+  ]
+} 
