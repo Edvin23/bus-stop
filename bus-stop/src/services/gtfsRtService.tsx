@@ -47,7 +47,7 @@ interface FeedEntity {
   };
 }
 
-// API endpoints - use relative URLs for production
+// API endpoints - use relative URLs for local development
 const VEHICLE_POSITIONS_API = '/api/vehicle-positions';
 const SWIFTLY_VEHICLES_API = '/api/swiftly/vehicles';
 
@@ -59,13 +59,13 @@ export async function fetchBusPositions(): Promise<BusPosition[]> {
     console.log('Fetching from:', VEHICLE_POSITIONS_API);
     const response = await fetch(VEHICLE_POSITIONS_API);
     console.log('Response status:', response.status, 'ok:', response.ok);
-    
+
     if (!response.ok) {
       const errorText = await response.text();
       console.error('Response error:', errorText);
       throw new Error(`Failed to fetch vehicle positions: ${response.status} ${response.statusText}`);
     }
-    
+
     const buffer = await response.arrayBuffer();
     console.log('Received buffer size:', buffer.byteLength);
 
@@ -102,20 +102,19 @@ export async function fetchSwiftlyBusPositions(agencyKey: string = 'lametro'): P
   try {
     const url = `${SWIFTLY_VEHICLES_API}?agencyKey=${agencyKey}`;
     console.log('Fetching from Swiftly:', url);
-    
+
     const response = await fetch(url);
     console.log('Swiftly response status:', response.status, 'ok:', response.ok);
-    
+
     if (!response.ok) {
       const errorText = await response.text();
       console.error('Swiftly response error:', errorText);
       throw new Error(`Failed to fetch Swiftly vehicle positions: ${response.status} ${response.statusText}`);
     }
-    
-    // Swiftly returns GTFS-RT binary data, so we need to decode it
+
     const buffer = await response.arrayBuffer();
     console.log('Swiftly buffer size:', buffer.byteLength);
-    
+
     const root = await protobuf.load(PROTO_PATH);
     const FeedMessage = root.lookupType('transit_realtime.FeedMessage');
     const message = FeedMessage.decode(new Uint8Array(buffer));
@@ -145,15 +144,12 @@ export async function fetchSwiftlyBusPositions(agencyKey: string = 'lametro'): P
   }
 }
 
-// Combined function that tries Swiftly first, falls back to GTFS-RT
 export async function fetchBusPositionsWithFallback(agencyKey: string = 'lametro'): Promise<BusPosition[]> {
   try {
-    // Try Swiftly API first
     return await fetchSwiftlyBusPositions(agencyKey);
   } catch (swiftlyError) {
     console.warn('Swiftly API failed, falling back to GTFS-RT:', swiftlyError);
     try {
-      // Fall back to GTFS-RT
       return await fetchBusPositions();
     } catch (gtfsError) {
       console.error('Both APIs failed:', gtfsError);
