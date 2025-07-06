@@ -7,16 +7,12 @@
       "config": {
         "distDir": "bus-stop/dist"
       }
-    },
-    {
-      "src": "bus-stop/server/server.js",
-      "use": "@vercel/node"
     }
   ],
   "routes": [
     {
       "src": "/api/(.*)",
-      "dest": "/bus-stop/server/server.js"
+      "dest": "/api/[...path].js"
     },
     {
       "src": "/(.*)",
